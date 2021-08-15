@@ -1,1 +1,1 @@
-@docker run -it -v "%CD%:/work" --workdir /work maven:3.8.1-openjdk-8 mvn clean package install
+@docker run -it -v "%CD%:/work" -v "%CD%\.m2:/root/.m2" --workdir /work maven:3.8.1-openjdk-8 mvn clean package install

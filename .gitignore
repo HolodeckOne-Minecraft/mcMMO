@@ -55,3 +55,6 @@
 
 # Atlassian Stuff
 /atlassian-ide-plugin.xml
+
+# Maven cache
+.m2/
