@@ -7,7 +7,6 @@ import com.gmail.nossr50.datatypes.skills.SubSkillType;
 import com.gmail.nossr50.mcMMO;
 import com.gmail.nossr50.skills.repair.Repair;
 import com.gmail.nossr50.skills.salvage.Salvage;
-import com.gmail.nossr50.util.compat.layers.world.WorldCompatibilityLayer;
 import com.gmail.nossr50.util.random.RandomChanceSkill;
 import com.gmail.nossr50.util.random.RandomChanceUtil;
 import org.bukkit.Material;
@@ -34,9 +33,22 @@ public final class BlockUtils {
      */
     public static void markDropsAsBonus(BlockState blockState, boolean triple) {
         if (triple)
-            blockState.setMetadata(mcMMO.BONUS_DROPS_METAKEY, new BonusDropMeta(2, mcMMO.p));
+            blockState.setMetadata(MetadataConstants.METADATA_KEY_BONUS_DROPS, new BonusDropMeta(2, mcMMO.p));
         else
-            blockState.setMetadata(mcMMO.BONUS_DROPS_METAKEY, new BonusDropMeta(1, mcMMO.p));
+            blockState.setMetadata(MetadataConstants.METADATA_KEY_BONUS_DROPS, new BonusDropMeta(1, mcMMO.p));
+    }
+
+    /**
+     * Cleans up some block metadata when a block breaks and the metadata is no longer needed
+     * This also sets the blocks coords to false in our chunk store
+     * @param block target block
+     */
+    public static void cleanupBlockMetadata(Block block) {
+        if(block.hasMetadata(MetadataConstants.METADATA_KEY_REPLANT)) {
+            block.removeMetadata(MetadataConstants.METADATA_KEY_REPLANT, mcMMO.p);
+        }
+
+        mcMMO.getPlaceStore().setFalse(block);
     }
 
     /**
@@ -45,7 +57,7 @@ public final class BlockUtils {
      * @param amount amount of extra items to drop
      */
     public static void markDropsAsBonus(BlockState blockState, int amount) {
-            blockState.setMetadata(mcMMO.BONUS_DROPS_METAKEY, new BonusDropMeta(amount, mcMMO.p));
+            blockState.setMetadata(MetadataConstants.METADATA_KEY_BONUS_DROPS, new BonusDropMeta(amount, mcMMO.p));
     }
 
     /**
@@ -278,22 +290,27 @@ public final class BlockUtils {
         if (data.getMaterial() == Material.CACTUS || data.getMaterial() == Material.SUGAR_CANE) {
             return true;
         }
-        if (data instanceof Ageable) {
-            Ageable ageable = (Ageable) data;
+        if (data instanceof Ageable ageable) {
             return ageable.getAge() == ageable.getMaximumAge();
         }
         return true;
     }
 
-    public static boolean isPartOfTree(Block rayCast) {
-        return hasWoodcuttingXP(rayCast.getState()) || isNonWoodPartOfTree(rayCast.getType());
+    public static boolean isPartOfTree(Block block) {
+        return hasWoodcuttingXP(block.getState()) || isNonWoodPartOfTree(block.getType());
     }
 
-    public static boolean isWithinWorldBounds(@NotNull WorldCompatibilityLayer worldCompatibilityLayer, @NotNull Block block) {
+    /**
+     * Checks to see if a Block is within the world bounds
+     * Prevent processing blocks from other plugins (or perhaps odd spigot anomalies) from sending blocks that can't exist within the world
+     * @param block
+     * @return
+     */
+    public static boolean isWithinWorldBounds(@NotNull Block block) {
         World world = block.getWorld();
 
         //World min height = inclusive | World max height = exclusive
-        return block.getY() >= worldCompatibilityLayer.getMinWorldHeight(world) && block.getY() < worldCompatibilityLayer.getMaxWorldHeight(world);
+        return block.getY() >= world.getMinHeight() && block.getY() < world.getMaxHeight();
     }
 
 }

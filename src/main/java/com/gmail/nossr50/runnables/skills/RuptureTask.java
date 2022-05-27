@@ -3,6 +3,7 @@ package com.gmail.nossr50.runnables.skills;
 import com.gmail.nossr50.datatypes.player.McMMOPlayer;
 import com.gmail.nossr50.events.skills.rupture.McMMOEntityDamageByRuptureEvent;
 import com.gmail.nossr50.mcMMO;
+import com.gmail.nossr50.util.MetadataConstants;
 import com.gmail.nossr50.util.skills.ParticleEffectUtils;
 import com.google.common.base.Objects;
 import org.bukkit.entity.LivingEntity;
@@ -63,7 +64,7 @@ public class RuptureTask extends BukkitRunnable {
                 endRupture();
             }
         } else {
-            targetEntity.removeMetadata(mcMMO.RUPTURE_META_KEY, mcMMO.p);
+            targetEntity.removeMetadata(MetadataConstants.METADATA_KEY_RUPTURE, mcMMO.p);
             this.cancel(); //Task no longer needed
         }
     }
@@ -87,7 +88,7 @@ public class RuptureTask extends BukkitRunnable {
             mcMMO.p.getServer().getPluginManager().callEvent(event);
 
             //Ensure the event wasn't cancelled and damage is still greater than 0
-            double damage = event.getFinalDamage();
+            double damage = event.getDamage(); //Use raw damage for Rupture
 
             if (event.isCancelled() || damage <= 0 || healthBeforeRuptureIsApplied - damage <= 0)
                 return true;
@@ -118,6 +119,7 @@ public class RuptureTask extends BukkitRunnable {
 //
 //        targetEntity.removeMetadata(mcMMO.RUPTURE_META_KEY, mcMMO.p);
 
+        targetEntity.removeMetadata(MetadataConstants.METADATA_KEY_RUPTURE, mcMMO.p);
         this.cancel(); //Task no longer needed
     }
 

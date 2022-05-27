@@ -6,7 +6,6 @@ import com.gmail.nossr50.datatypes.chat.ChatChannel;
 import com.gmail.nossr50.datatypes.player.McMMOPlayer;
 import com.gmail.nossr50.datatypes.skills.PrimarySkillType;
 import com.gmail.nossr50.datatypes.skills.SubSkillType;
-import com.gmail.nossr50.datatypes.skills.interfaces.Skill;
 import com.gmail.nossr50.datatypes.skills.subskills.taming.CallOfTheWildType;
 import com.gmail.nossr50.events.McMMOReplaceVanillaTreasureEvent;
 import com.gmail.nossr50.events.fake.FakePlayerAnimationEvent;
@@ -120,9 +119,8 @@ public class PlayerListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityDamageByEntityHighest(EntityDamageByEntityEvent event) {
         // we only care about players as this is for fixing player death messages
-        if (!(event.getEntity() instanceof Player))
+        if (!(event.getEntity() instanceof Player player))
             return;
-        Player player = (Player) event.getEntity();
 
         // get the attacker
         LivingEntity attacker;
@@ -185,7 +183,7 @@ public class PlayerListener implements Listener {
 
         Player killedPlayer = event.getEntity();
 
-        if (!killedPlayer.hasMetadata(mcMMO.playerDataKey) || Permissions.hardcoreBypass(killedPlayer)) {
+        if (!killedPlayer.hasMetadata(MetadataConstants.METADATA_KEY_PLAYER_DATA) || Permissions.hardcoreBypass(killedPlayer)) {
             return;
         }
 
@@ -273,7 +271,7 @@ public class PlayerListener implements Listener {
         ItemStack dropStack = drop.getItemStack();
 
         if (ItemUtils.isSharable(dropStack)) {
-            drop.setMetadata(mcMMO.droppedItemKey, mcMMO.metadataValue);
+            drop.setMetadata(MetadataConstants.METADATA_KEY_TRACKED_ITEM, MetadataConstants.MCMMO_METADATA_VALUE);
         }
 
         SkillUtils.removeAbilityBuff(dropStack);
@@ -404,7 +402,7 @@ public class PlayerListener implements Listener {
         //Track the hook
         if(ExperienceConfig.getInstance().isFishingExploitingPrevented())
         {
-            if(event.getHook().getMetadata(mcMMO.FISH_HOOK_REF_METAKEY).size() == 0)
+            if(event.getHook().getMetadata(MetadataConstants.METADATA_KEY_FISH_HOOK_REF).size() == 0)
             {
                 fishingManager.setFishHookReference(event.getHook());
             }
@@ -414,9 +412,8 @@ public class PlayerListener implements Listener {
             {
                 event.setExpToDrop(0);
 
-                if(caught instanceof Item)
+                if(caught instanceof Item caughtItem)
                 {
-                    Item caughtItem = (Item) caught;
                     caughtItem.remove();
                 }
 
@@ -449,7 +446,7 @@ public class PlayerListener implements Listener {
                 if(caught instanceof Item) {
                     if(ExperienceConfig.getInstance().isFishingExploitingPrevented()) {
                         if (fishingManager.isExploitingFishing(event.getHook().getLocation().toVector())) {
-                            player.sendMessage(LocaleLoader.getString("Fishing.ScarcityTip", 3));
+                            player.sendMessage(LocaleLoader.getString("Fishing.ScarcityTip", ExperienceConfig.getInstance().getFishingExploitingOptionMoveRange()));
                             event.setExpToDrop(0);
                             Item caughtItem = (Item) caught;
                             caughtItem.remove();
@@ -490,9 +487,8 @@ public class PlayerListener implements Listener {
             return;
         }
 
-        if(event.getEntity() instanceof Player)
+        if(event.getEntity() instanceof Player player)
         {
-            Player player = (Player) event.getEntity();
 
             /* WORLD GUARD MAIN FLAG CHECK */
             if(WorldGuardUtils.isWorldGuardLoaded())
@@ -515,19 +511,19 @@ public class PlayerListener implements Listener {
             ItemStack dropStack = drop.getItemStack();
 
             //Remove tracking
-            if(drop.hasMetadata(mcMMO.trackedArrow)) {
-                drop.removeMetadata(mcMMO.trackedArrow, mcMMO.p);
+            if(drop.hasMetadata(MetadataConstants.METADATA_KEY_TRACKED_ARROW)) {
+                drop.removeMetadata(MetadataConstants.METADATA_KEY_TRACKED_ARROW, mcMMO.p);
             }
 
-            if (drop.hasMetadata(mcMMO.disarmedItemKey)) {
-                if (!player.getName().equals(drop.getMetadata(mcMMO.disarmedItemKey).get(0).asString())) {
+            if (drop.hasMetadata(MetadataConstants.METADATA_KEY_DISARMED_ITEM)) {
+                if (!player.getName().equals(drop.getMetadata(MetadataConstants.METADATA_KEY_DISARMED_ITEM).get(0).asString())) {
                     event.setCancelled(true);
                 }
 
                 return;
             }
 
-            if (!drop.hasMetadata(mcMMO.droppedItemKey) && mcMMOPlayer.inParty() && ItemUtils.isSharable(dropStack)) {
+            if (!drop.hasMetadata(MetadataConstants.METADATA_KEY_TRACKED_ITEM) && mcMMOPlayer.inParty() && ItemUtils.isSharable(dropStack)) {
                 event.setCancelled(ShareHandler.handleItemShare(drop, mcMMOPlayer));
 
                 if (event.isCancelled()) {
@@ -574,7 +570,7 @@ public class PlayerListener implements Listener {
 
         //Use a sync save if the server is shutting down to avoid race conditions
         mcMMOPlayer.logout(mcMMO.isServerShutdownExecuted());
-        mcMMO.getTransientMetadataTools().cleanAllLivingEntityMetadata(event.getPlayer());
+        mcMMO.getTransientMetadataTools().cleanLivingEntityMetadata(event.getPlayer());
     }
 
     /**
@@ -886,7 +882,7 @@ public class PlayerListener implements Listener {
                 if(player.getInventory().getItemInOffHand().getType() != Material.AIR && !player.isInsideVehicle() && !player.isSneaking()) {
                     break;
                 }
-                
+
                 /* ACTIVATION CHECKS */
                 if (mcMMO.p.getGeneralConfig().getAbilitiesEnabled()) {
                     mcMMOPlayer.processAbilityActivation(PrimarySkillType.AXES);
@@ -1005,7 +1001,7 @@ public class PlayerListener implements Listener {
      * When a {@link Player} attempts to place an {@link ItemStack}
      * into an {@link ItemFrame}, we want to make sure to remove any
      * Ability buffs from that item.
-     * 
+     *
      * @param event The {@link PlayerInteractEntityEvent} to handle
      */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -1014,8 +1010,7 @@ public class PlayerListener implements Listener {
          *  We can check for an instance instead of EntityType here, so we are
          *  ready for the infamous "Glow Item Frame" in 1.17 too!
          */
-        if (event.getRightClicked() instanceof ItemFrame) {
-            ItemFrame frame = (ItemFrame) event.getRightClicked();
+        if (event.getRightClicked() instanceof ItemFrame frame) {
 
             // Check for existing items (ignore rotations)
             if (frame.getItem().getType() != Material.AIR) {

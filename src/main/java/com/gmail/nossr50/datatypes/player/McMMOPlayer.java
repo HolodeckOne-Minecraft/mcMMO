@@ -41,10 +41,7 @@ import com.gmail.nossr50.skills.swords.SwordsManager;
 import com.gmail.nossr50.skills.taming.TamingManager;
 import com.gmail.nossr50.skills.unarmed.UnarmedManager;
 import com.gmail.nossr50.skills.woodcutting.WoodcuttingManager;
-import com.gmail.nossr50.util.BlockUtils;
-import com.gmail.nossr50.util.EventUtils;
-import com.gmail.nossr50.util.Misc;
-import com.gmail.nossr50.util.Permissions;
+import com.gmail.nossr50.util.*;
 import com.gmail.nossr50.util.experience.ExperienceBarManager;
 import com.gmail.nossr50.util.player.NotificationManager;
 import com.gmail.nossr50.util.player.UserManager;
@@ -82,7 +79,7 @@ public class McMMOPlayer implements Identified {
     private final Player        player;
     private final PlayerProfile profile;
 
-    private final Map<PrimarySkillType, SkillManager> skillManagers = new EnumMap<PrimarySkillType, SkillManager>(PrimarySkillType.class);
+    private final Map<PrimarySkillType, SkillManager> skillManagers = new EnumMap<>(PrimarySkillType.class);
     private final ExperienceBarManager experienceBarManager;
 
     private Party   party;
@@ -101,10 +98,10 @@ public class McMMOPlayer implements Identified {
 
     private ChatChannel chatChannel;
 
-    private final Map<SuperAbilityType, Boolean> abilityMode     = new EnumMap<SuperAbilityType, Boolean>(SuperAbilityType.class);
-    private final Map<SuperAbilityType, Boolean> abilityInformed = new EnumMap<SuperAbilityType, Boolean>(SuperAbilityType.class);
+    private final Map<SuperAbilityType, Boolean> abilityMode     = new EnumMap<>(SuperAbilityType.class);
+    private final Map<SuperAbilityType, Boolean> abilityInformed = new EnumMap<>(SuperAbilityType.class);
 
-    private final Map<ToolType, Boolean> toolMode = new EnumMap<ToolType, Boolean>(ToolType.class);
+    private final Map<ToolType, Boolean> toolMode = new EnumMap<>(ToolType.class);
 
     private int recentlyHurt;
     private int respawnATS;
@@ -645,7 +642,7 @@ public class McMMOPlayer implements Identified {
 
         applyXpGain(skill, modifyXpGain(skill, xp), xpGainReason, xpGainSource);
 
-        if (party == null) {
+        if (party == null || party.hasReachedLevelCap()) {
             return;
         }
 
@@ -946,7 +943,7 @@ public class McMMOPlayer implements Identified {
             SkillUtils.removeAbilityBuff(player.getInventory().getItemInMainHand());
 
         // Enable the ability
-        profile.setAbilityDATS(superAbilityType, System.currentTimeMillis() + (ticks * Misc.TIME_CONVERSION_FACTOR));
+        profile.setAbilityDATS(superAbilityType, System.currentTimeMillis() + ((long) ticks * Misc.TIME_CONVERSION_FACTOR));
         setAbilityMode(superAbilityType, true);
 
         if (superAbilityType == SuperAbilityType.SUPER_BREAKER || superAbilityType == SuperAbilityType.GIGA_DRILL_BREAKER) {
@@ -954,7 +951,7 @@ public class McMMOPlayer implements Identified {
         }
 
         setToolPreparationMode(tool, false);
-        new AbilityDisableTask(this, superAbilityType).runTaskLater(mcMMO.p, ticks * Misc.TICK_CONVERSION_FACTOR);
+        new AbilityDisableTask(this, superAbilityType).runTaskLater(mcMMO.p, (long) ticks * Misc.TICK_CONVERSION_FACTOR);
     }
 
     public void processAbilityActivation(@NotNull PrimarySkillType primarySkillType) {
@@ -1137,8 +1134,8 @@ public class McMMOPlayer implements Identified {
      */
     public void logout(boolean syncSave) {
         Player thisPlayer = getPlayer();
-        if(getPlayer().hasMetadata(mcMMO.RUPTURE_META_KEY)) {
-            RuptureTaskMeta ruptureTaskMeta = (RuptureTaskMeta) getPlayer().getMetadata(mcMMO.RUPTURE_META_KEY).get(0);
+        if(getPlayer().hasMetadata(MetadataConstants.METADATA_KEY_RUPTURE)) {
+            RuptureTaskMeta ruptureTaskMeta = (RuptureTaskMeta) getPlayer().getMetadata(MetadataConstants.METADATA_KEY_RUPTURE).get(0);
 
             //Punish a logout
             ruptureTaskMeta.getRuptureTimerTask().endRupture();

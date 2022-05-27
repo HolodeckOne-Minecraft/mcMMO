@@ -1,3 +1,119 @@
+Version 2.1.212
+    An herbalism exploit has been patched (thanks WhatsTheBadNews)
+    Added 'ExploitFix.Combat.XPCeiling.Enabled' to experience.yml
+    Added 'ExploitFix.Combat.XPCeiling.Damage_Limit' to experience.yml
+    Single instances of combat damage above 100 give are capped to give the same reward as 100 by default (100 is a lot, but you can change this in settings)
+
+    NOTES: The damage ceiling won't affect server that don't have mobs running around with abnormally high health, if your server does you'll want to adjust this limit or disable it.
+Version 2.1.211
+    Added /mmodebug info for players hitting other players
+    Fixed Immortal Player bug
+    Removed all of Spigot's buggy and deprecated DamageModifier API, this fixes the bug where players would become immortal when using certain other plugins
+    Rupture is back to doing "pure" damage (due to the above change)
+
+    NOTES:
+    Rupture damage will be tweaked based on feedback as it is dealing "pure" damage
+Version 2.1.210
+    Fixed a memory leak involving mob metadata
+    Fixed a potential null pointer exception in InventoryListener
+
+    NOTES:
+    If you're having issues with "immortal players" this is a known plugin incompatibility between mcMMO and another plugin, I need more info on what plugins need to be present to cause it. Please post info to GitHub issues or tag me on discord.
+    There was a big rewrite in this update relating to how various types of metadata were being tracked/stored/retrieved
+    If you run into issues with this version of mcMMO, please post about it on GitHub
+
+Version 2.1.209
+    Fixed a bug where some config files did not get trimmed completely
+
+    NOTES:
+    This should fix the issue for everyone, let me know if you still run into trouble!
+    Don't be afraid to ping me on discord
+
+Version 2.1.208
+    Significantly rewrote to how mcMMO loads/updates config files
+    Fixed a bug where huge config files caused the server to take forever to start/shutdown
+    Fixed config files duplicating comments and updated their code to use Spigot API (thanks the456gamer)
+    mcMMO now repairs config files (removing duplicate comments, see notes)
+    Updated lithuanian locale (thanks dexasz)
+
+    NOTES:
+    Due to a change in Spigot mcMMO started growing config files at an alarming rate until they became so big they wouldn't load, and well before they got to that stage they slowed down loading the server
+    mcMMO now uses the Spigot API in a smarter way for config files
+
+Version 2.1.207
+    Fixed an IndexOutOfBounds exception with our BlockTracker
+    Fixed a bug where leveling up a party at level cap would spam the chat with messages
+    mcMMO will no longer use enchanted repair materials (thanks JeBobs)
+    Added an option to allow enchanted repair materials 'Skills.Repair.Use_Enchanted_Materials' in config.yml
+    Temporarily rolling required Java version back to 16
+    Added unicode (UTF-8) support to locale files (no more UTF-16 codes needed)
+    Added locale key 'Scoreboard.Disabled' to en_US
+    Added locale key 'Scoreboard.NotSetupYet' to en_US
+    Fixed a bug where Salvage sent messages even though the event was cancelled (Thanks TheBusyBiscuit)
+
+Version 2.1.206
+    Fixed a memory leak involving Herbalism under specific circumstances
+    Fixed a memory leak involving Rupture under specific circumstances
+    Fixed a memory leak involving Dodge
+    Fixed a memory leak involving Endermen and block pickups
+    Fixed a memory leak from plugin conflicts when double drops get activated
+    Fixed a memory leak that required a specific config.yml setup with mob health bars
+    You can no longer set mob health bars to -1 in config.yml to set it to display permanently (this was problematic behavior)
+    Fixed a bug preventing Action Bar messages from showing
+    Fixed a bug where Alchemy XP wasn't being granted
+    Lowered the default volume of level up from .75 to .3 in sounds.yml (delete sounds.yml to get this change automagically)
+    Updated adventure platform dependency
+    Updated to use Java 17
+
+    NOTES:
+    mcMMO will target the newest version of MC moving forward, any backwards compatibility with prior versions of Minecraft should be considered a side effect rather than intended.
+
+Version 2.1.205
+    Fixed yet another exception preventing Alchemy from working (thanks NemuruYama)
+    Added some code to cleanup potential memory leaks
+
+    NOTES:
+    Sorry for the delay in this patch, I have had a terrible cold all weekend, feeling better now
+
+Version 2.1.204
+    Fixed IndexOutOfBounds exception (thanks gecko10000) (related to Alchemy)
+    Added double smelt to copper ingot and netherite scrap (thanks Lyther)
+
+Version 2.1.203
+    mcMMO now requires Java 16
+    mcMMO now requires the newest version of Minecraft (currently 1.17.1)
+    Fixed several API breaks (mostly affected Alchemy)
+    Fixed a bug relating to Shake percentages (thanks Lyther)
+    Fixed hexcolors not displaying correctly in level up milestone broadcasts (thanks gecko10000)
+    (API) Added deprecated constructors for PlayerProfile (thanks PikaMug)
+    mcMMO has had many of its dependencies updated to newer builds
+
+    NOTES:
+    If you want to play mcMMO on older versions, simply use 2.1.202 instead
+    Keeping mcMMO backwards compatible with older versions is getting messy, and I'd rather be able to focus my attention at newer features than having to make an elaborate build process (or alternatively hacky code) to support older versions of the game
+    Furthermore, it seems most people are playing 1.17.1 by a wide margin
+    You may have trouble compiling the source code if your maven is not setup to run JDK16, if you get any errors when compiling this is likely the reason
+
+    The data from bstats went into making this decision (shoutout to Qixils for typing this up too)
+     71.9% of servers are running 1.17.X
+     97.9% of servers are running ≥1.16
+     99.3% of servers are running ≥1.15
+
+Version 2.1.202
+    Fixed a bug where mcMMO didn't reward XP for Kelp
+    Fixed a bug where mcMMO marked bonemealed Azalea trees as unnatural (and thus did not give XP or get affected by Tree Feller)
+    Added Amethyst_Block to experience.yml for Mining
+    Added Flowering Azalea Leaves to Tree Feller's white list
+    Fixed a bug where mcMMO didn't appropriately flag blocks as natural in some tree growing events
+    (SQL) Added more MySQL/MariaDB settings (allowPublicKeyRetrieval - thanks rosaage)
+    (API) Added CREATED_PARTY and DISBANDED_PARTY to EventReason (used in some party events - thanks PikaMug )
+    Party member name matching is no longer case sensitive (thanks Wariorrrr)
+    Updated zh_CN locale (thanks GhostDC)
+    Added some settings for over fishing (Settings are in experience.yml under Fishing_ExploitFix_Options - thanks tunagohan)
+
+    NOTES:
+    This means tree feller will correctly traverse flowering azalea leaves during its ability
+
 Version 2.1.201
     Tweaked the visual/audio effect for Rupture
     (API) TNT is set as the source in Blast Mining (1.16.1 and up)

@@ -252,10 +252,10 @@ public class Party {
                     SoundManager.sendSound(leader, leader.getLocation(), SoundType.LEVEL_UP);
                 }
             }
-            return;
+        } else {
+            PartyManager.informPartyMembersLevelUp(this, levelsGained, getLevel());
         }
 
-        PartyManager.informPartyMembersLevelUp(this, levelsGained, getLevel());
     }
 
     public boolean hasReachedLevelCap() {
@@ -327,7 +327,7 @@ public class Party {
     }
 
     public boolean hasMember(String memberName) {
-        return this.getMembers().containsValue(memberName);
+        return this.getMembers().values().stream().anyMatch(memberName::equalsIgnoreCase);
     }
 
     public boolean hasMember(UUID uuid) {
@@ -403,11 +403,9 @@ public class Party {
             return false;
         }
 
-        if (!(obj instanceof Party)) {
+        if (!(obj instanceof Party other)) {
             return false;
         }
-
-        Party other = (Party) obj;
 
         if ((this.getName() == null) || (other.getName() == null)) {
             return false;

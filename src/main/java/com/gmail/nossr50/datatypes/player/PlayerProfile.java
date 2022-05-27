@@ -14,10 +14,7 @@ import com.google.common.collect.ImmutableMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.DelayQueue;
 
 public class PlayerProfile {
@@ -35,20 +32,28 @@ public class PlayerProfile {
     /* Skill Data */
     private final Map<PrimarySkillType, Integer>   skills     = new EnumMap<>(PrimarySkillType.class);   // Skill & Level
     private final Map<PrimarySkillType, Float>     skillsXp   = new EnumMap<>(PrimarySkillType.class);     // Skill & XP
-    private final Map<SuperAbilityType, Integer> abilityDATS = new EnumMap<SuperAbilityType, Integer>(SuperAbilityType.class); // Ability & Cooldown
-    private final Map<UniqueDataType, Integer> uniquePlayerData = new EnumMap<UniqueDataType, Integer>(UniqueDataType.class); //Misc data that doesn't fit into other categories (chimaera wing, etc..)
+    private final Map<SuperAbilityType, Integer> abilityDATS = new EnumMap<>(SuperAbilityType.class); // Ability & Cooldown
+    private final Map<UniqueDataType, Integer> uniquePlayerData = new EnumMap<>(UniqueDataType.class); //Misc data that doesn't fit into other categories (chimaera wing, etc..)
 
     // Store previous XP gains for diminished returns
     private final DelayQueue<SkillXpGain> gainedSkillsXp = new DelayQueue<>();
-    private final Map<PrimarySkillType, Float> rollingSkillsXp = new EnumMap<PrimarySkillType, Float>(PrimarySkillType.class);
+    private final Map<PrimarySkillType, Float> rollingSkillsXp = new EnumMap<>(PrimarySkillType.class);
 
     @Deprecated
-    //TODO: Add deprecated constructor w/o startinglevel
+    public PlayerProfile(String playerName) {
+        this(playerName, null, 0);
+    }
+
+    @Deprecated
+    public PlayerProfile(String playerName, UUID uuid) {
+        this(playerName, uuid, 0);
+    }
+
+    @Deprecated
     public PlayerProfile(String playerName, int startingLevel) {
         this(playerName, null, startingLevel);
     }
 
-    //TODO: Add deprecated constructor w/o startinglevel
     public PlayerProfile(String playerName, @Nullable UUID uuid, int startingLevel) {
         this.uuid = uuid;
         this.playerName = playerName;
@@ -80,7 +85,7 @@ public class PlayerProfile {
         this.loaded = isLoaded;
     }
 
-    public PlayerProfile(@NotNull String playerName, UUID uuid, Map<PrimarySkillType, Integer> levelData, Map<PrimarySkillType, Float> xpData, Map<SuperAbilityType, Integer> cooldownData, int scoreboardTipsShown, Map<UniqueDataType, Integer> uniqueProfileData, @Nullable Long lastLogin) {
+    public PlayerProfile(@NotNull String playerName, @Nullable UUID uuid, Map<PrimarySkillType, Integer> levelData, Map<PrimarySkillType, Float> xpData, Map<SuperAbilityType, Integer> cooldownData, int scoreboardTipsShown, Map<UniqueDataType, Integer> uniqueProfileData, @Nullable Long lastLogin) {
         this.playerName = playerName;
         this.uuid = uuid;
         this.scoreboardTipsShown = scoreboardTipsShown;
@@ -152,14 +157,10 @@ public class PlayerProfile {
     /**
      * Get this users last login, will return current java.lang.System#currentTimeMillis() if it doesn't exist
      * @return the last login
-     * @deprecated This is only function for FlatFileDB atm and its only here for unit testing right now
+     * @deprecated This is only function for FlatFileDB atm, and it's only here for unit testing right now
      */
-    @Deprecated
     public @NotNull Long getLastLogin() {
-        if(lastLogin == null)
-            return -1L;
-        else
-            return lastLogin;
+        return Objects.requireNonNullElse(lastLogin, -1L);
     }
 
     public void updateLastLogin() {

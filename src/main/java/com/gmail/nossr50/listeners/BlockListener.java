@@ -11,6 +11,7 @@ import com.gmail.nossr50.datatypes.skills.SuperAbilityType;
 import com.gmail.nossr50.datatypes.skills.ToolType;
 import com.gmail.nossr50.events.fake.FakeBlockBreakEvent;
 import com.gmail.nossr50.events.fake.FakeBlockDamageEvent;
+import com.gmail.nossr50.events.fake.FakeEvent;
 import com.gmail.nossr50.mcMMO;
 import com.gmail.nossr50.skills.alchemy.Alchemy;
 import com.gmail.nossr50.skills.excavation.ExcavationManager;
@@ -20,7 +21,6 @@ import com.gmail.nossr50.skills.repair.Repair;
 import com.gmail.nossr50.skills.salvage.Salvage;
 import com.gmail.nossr50.skills.woodcutting.WoodcuttingManager;
 import com.gmail.nossr50.util.*;
-import com.gmail.nossr50.util.compat.layers.world.WorldCompatibilityLayer;
 import com.gmail.nossr50.util.player.UserManager;
 import com.gmail.nossr50.util.skills.SkillUtils;
 import com.gmail.nossr50.util.sounds.SoundManager;
@@ -46,9 +46,16 @@ public class BlockListener implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     public void onBlockDropItemEvent(BlockDropItemEvent event)
     {
+        //Make sure we clean up metadata on these blocks
+        if(event.isCancelled()) {
+            if(event.getBlock().hasMetadata(MetadataConstants.METADATA_KEY_BONUS_DROPS))
+                event.getBlock().removeMetadata(MetadataConstants.METADATA_KEY_BONUS_DROPS, plugin);
+            return;
+        }
+
         //Track how many "things" are being dropped
         HashSet<Material> uniqueMaterials = new HashSet<>();
         boolean dontRewardTE = false; //If we suspect TEs are mixed in with other things don't reward bonus drops for anything that isn't a block
@@ -91,8 +98,8 @@ public class BlockListener implements Listener {
                     }
                 }
 
-                if (event.getBlock().getMetadata(mcMMO.BONUS_DROPS_METAKEY).size() > 0) {
-                    BonusDropMeta bonusDropMeta = (BonusDropMeta) event.getBlock().getMetadata(mcMMO.BONUS_DROPS_METAKEY).get(0);
+                if (event.getBlock().getMetadata(MetadataConstants.METADATA_KEY_BONUS_DROPS).size() > 0) {
+                    BonusDropMeta bonusDropMeta = (BonusDropMeta) event.getBlock().getMetadata(MetadataConstants.METADATA_KEY_BONUS_DROPS).get(0);
                     int bonusCount = bonusDropMeta.asInt();
 
                     for (int i = 0; i < bonusCount; i++) {
@@ -102,8 +109,8 @@ public class BlockListener implements Listener {
             }
         }
 
-        if(event.getBlock().hasMetadata(mcMMO.BONUS_DROPS_METAKEY))
-            event.getBlock().removeMetadata(mcMMO.BONUS_DROPS_METAKEY, plugin);
+        if(event.getBlock().hasMetadata(MetadataConstants.METADATA_KEY_BONUS_DROPS))
+            event.getBlock().removeMetadata(MetadataConstants.METADATA_KEY_BONUS_DROPS, plugin);
     }
 
     /**
@@ -123,12 +130,10 @@ public class BlockListener implements Listener {
 
         BlockFace direction = event.getDirection();
         Block movedBlock;
-        WorldCompatibilityLayer worldCompatibilityLayer = mcMMO.getCompatibilityManager().getWorldCompatibilityLayer();
-
         for (Block block : event.getBlocks()) {
             movedBlock = block.getRelative(direction);
 
-            if(BlockUtils.isWithinWorldBounds(worldCompatibilityLayer, movedBlock)) {
+            if(BlockUtils.isWithinWorldBounds(movedBlock)) {
                 mcMMO.getPlaceStore().setTrue(movedBlock);
             }
         }
@@ -153,15 +158,13 @@ public class BlockListener implements Listener {
         BlockFace direction = event.getDirection();
         Block movedBlock = event.getBlock().getRelative(direction);
 
-        WorldCompatibilityLayer worldCompatibilityLayer = mcMMO.getCompatibilityManager().getWorldCompatibilityLayer();
-
         //Spigot makes bad things happen in its API
-        if(BlockUtils.isWithinWorldBounds(worldCompatibilityLayer, movedBlock)) {
+        if(BlockUtils.isWithinWorldBounds(movedBlock)) {
             mcMMO.getPlaceStore().setTrue(movedBlock);
         }
 
         for (Block block : event.getBlocks()) {
-            if(BlockUtils.isWithinWorldBounds(worldCompatibilityLayer, block)) {
+            if(BlockUtils.isWithinWorldBounds(block)) {
                 mcMMO.getPlaceStore().setTrue(block.getRelative(direction));
             }
         }
@@ -184,10 +187,9 @@ public class BlockListener implements Listener {
         BlockState blockState = event.getNewState();
 
         if(ExperienceConfig.getInstance().isSnowExploitPrevented() && BlockUtils.shouldBeWatched(blockState)) {
-            WorldCompatibilityLayer worldCompatibilityLayer = mcMMO.getCompatibilityManager().getWorldCompatibilityLayer();
             Block block = blockState.getBlock();
 
-            if(BlockUtils.isWithinWorldBounds(worldCompatibilityLayer, block)) {
+            if(BlockUtils.isWithinWorldBounds(block)) {
                 mcMMO.getPlaceStore().setTrue(block);
             }
         }
@@ -207,10 +209,9 @@ public class BlockListener implements Listener {
 
         if(ExperienceConfig.getInstance().preventStoneLavaFarming()) {
             BlockState newState = event.getNewState();
-            WorldCompatibilityLayer worldCompatibilityLayer = mcMMO.getCompatibilityManager().getWorldCompatibilityLayer();
 
             if(newState.getType() != Material.OBSIDIAN && ExperienceConfig.getInstance().doesBlockGiveSkillXP(PrimarySkillType.MINING, newState.getBlockData())) {
-                if(BlockUtils.isWithinWorldBounds(worldCompatibilityLayer, newState.getBlock())) {
+                if(BlockUtils.isWithinWorldBounds(newState.getBlock())) {
                     mcMMO.getPlaceStore().setTrue(newState);
                 }
             }
@@ -235,10 +236,11 @@ public class BlockListener implements Listener {
             return;
         }
 
-        WorldCompatibilityLayer worldCompatibilityLayer = mcMMO.getCompatibilityManager().getWorldCompatibilityLayer();
-
-        if(BlockUtils.isWithinWorldBounds(worldCompatibilityLayer, block)) {
-            mcMMO.getPlaceStore().setTrue(blockState);
+        if(BlockUtils.isWithinWorldBounds(block)) {
+            //NOTE: BlockMultiPlace has its own logic so don't handle anything that would overlap
+            if (!(event instanceof BlockMultiPlaceEvent)) {
+                mcMMO.getPlaceStore().setTrue(blockState);
+            }
         }
 
 
@@ -272,11 +274,18 @@ public class BlockListener implements Listener {
             BlockState blockState = replacedBlockState.getBlock().getState();
             Block block = blockState.getBlock();
 
-            WorldCompatibilityLayer worldCompatibilityLayer = mcMMO.getCompatibilityManager().getWorldCompatibilityLayer();
-
             /* Check if the blocks placed should be monitored so they do not give out XP in the future */
-            if(BlockUtils.isWithinWorldBounds(worldCompatibilityLayer, block)) {
-                mcMMO.getPlaceStore().setTrue(blockState);
+            if(BlockUtils.isWithinWorldBounds(block)) {
+                //Updated: 10/5/2021
+                //Note: For some reason Azalea trees trigger this event but no other tree does (as of 10/5/2021) but if this changes in the future we may need to update this
+                if(BlockUtils.isPartOfTree(event.getBlockPlaced())) {
+                    return;
+                }
+
+                //Track unnatural blocks
+                for(BlockState replacedStates : event.getReplacedBlockStates()) {
+                    mcMMO.getPlaceStore().setTrue(replacedStates);
+                }
             }
         }
     }
@@ -291,9 +300,7 @@ public class BlockListener implements Listener {
             return;
 
         // Minecraft is dumb, the events still throw when a plant "grows" higher than the max block height.  Even though no new block is created
-        WorldCompatibilityLayer worldCompatibilityLayer = mcMMO.getCompatibilityManager().getWorldCompatibilityLayer();
-
-        if(BlockUtils.isWithinWorldBounds(worldCompatibilityLayer, block)) {
+        if(BlockUtils.isWithinWorldBounds(block)) {
             mcMMO.getPlaceStore().setFalse(block);
         }
     }
@@ -306,21 +313,27 @@ public class BlockListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         /* WORLD BLACKLIST CHECK */
-        if(WorldBlacklist.isWorldBlacklisted(event.getBlock().getWorld()))
-            return;
-
-        /* WORLD GUARD MAIN FLAG CHECK */
-        if(WorldGuardUtils.isWorldGuardLoaded())
-        {
-            if(!WorldGuardManager.getInstance().hasMainFlag(event.getPlayer()))
-                return;
-        }
+        Block block = event.getBlock();
 
         if (event instanceof FakeBlockBreakEvent) {
             return;
         }
 
-        BlockState blockState = event.getBlock().getState();
+        if(WorldBlacklist.isWorldBlacklisted(block.getWorld())) {
+            BlockUtils.cleanupBlockMetadata(block);
+            return;
+        }
+
+        /* WORLD GUARD MAIN FLAG CHECK */
+        if(WorldGuardUtils.isWorldGuardLoaded())
+        {
+            if(!WorldGuardManager.getInstance().hasMainFlag(event.getPlayer())) {
+                BlockUtils.cleanupBlockMetadata(block);
+                return;
+            }
+        }
+
+        BlockState blockState = block.getState();
         Location location = blockState.getLocation();
 
 //        if (!BlockUtils.shouldBeWatched(blockState)) {
@@ -335,6 +348,7 @@ public class BlockListener implements Listener {
         Player player = event.getPlayer();
 
         if (!UserManager.hasPlayerDataKey(player) || player.getGameMode() == GameMode.CREATIVE) {
+            BlockUtils.cleanupBlockMetadata(block);
             return;
         }
 
@@ -343,7 +357,8 @@ public class BlockListener implements Listener {
         //Check if profile is loaded
         if(mcMMOPlayer == null) {
             /* Remove metadata from placed watched blocks */
-            mcMMO.getPlaceStore().setFalse(blockState);
+
+            BlockUtils.cleanupBlockMetadata(block);
             return;
         }
 
@@ -405,7 +420,7 @@ public class BlockListener implements Listener {
         }
 
         /* Remove metadata from placed watched blocks */
-        mcMMO.getPlaceStore().setFalse(blockState);
+        BlockUtils.cleanupBlockMetadata(block);
     }
 
     /**
@@ -415,6 +430,9 @@ public class BlockListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockBreakHigher(BlockBreakEvent event) {
+        if(event instanceof FakeEvent)
+            return;
+
         /* WORLD BLACKLIST CHECK */
         if(WorldBlacklist.isWorldBlacklisted(event.getBlock().getWorld()))
             return;
@@ -424,10 +442,6 @@ public class BlockListener implements Listener {
         {
             if(!WorldGuardManager.getInstance().hasMainFlag(event.getPlayer()))
                 return;
-        }
-
-        if (event instanceof FakeBlockBreakEvent) {
-            return;
         }
 
         Player player = event.getPlayer();
@@ -682,9 +696,8 @@ public class BlockListener implements Listener {
                     player.sendMessage("[mcMMO DEBUG] World Guard xp flag is not permitted for this player in this region");
             }
 
-            if(blockState instanceof Furnace)
+            if(blockState instanceof Furnace furnace)
             {
-                Furnace furnace = (Furnace) blockState;
                 if(mcMMO.getSmeltingTracker().isFurnaceOwned(furnace))
                 {
                     player.sendMessage("[mcMMO DEBUG] This furnace has a registered owner");

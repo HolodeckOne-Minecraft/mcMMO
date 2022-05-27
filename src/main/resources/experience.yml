@@ -25,6 +25,10 @@
 EarlyGameBoost:
     Enabled: true
 ExploitFix:
+    Combat:
+        XPCeiling:
+            Enabled: true
+            Damage_Limit: 100
     COTWBreeding: true
     UnsafeEnchantments: false
     # Prevent many exploits related to fishing
@@ -39,6 +43,9 @@ ExploitFix:
     # mcMMO normally doesn't process attacks against an Entity if it is an NPC from another plugin
     # Of course, mcMMO doesn't know for sure whether or not something is an NPC, it checks a few known things, see our source code to see how
     PreventPluginNPCInteraction: true
+Fishing_ExploitFix_Options:
+    MoveRange: 3
+    OverFishLimit: 10
 Experience_Bars:
     # Turn this to false if you wanna disable XP bars
     Enable: true
@@ -394,7 +401,7 @@ Experience_Values:
         Cobbled_Deepslate: 15
         Calcite: 400
         Smooth_Basalt: 300
-        Block_Of_Amethyst: 500
+        Amethyst_Block: 500
         Budding_Amethyst: 400
         Small_Amethyst_Bud: 10
         Medium_Amethyst_Bud: 20

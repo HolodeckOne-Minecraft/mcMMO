@@ -1,37 +1,19 @@
 package com.gmail.nossr50.util.blockmeta;
 
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
-import java.io.Serializable;
-import java.util.UUID;
-
+import com.gmail.nossr50.mcMMO;
+import com.gmail.nossr50.util.BlockUtils;
+import com.google.common.io.Files;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import com.gmail.nossr50.mcMMO;
-import com.gmail.nossr50.util.BlockUtils;
-import com.gmail.nossr50.util.compat.CompatibilityManager;
-import com.gmail.nossr50.util.compat.layers.world.WorldCompatibilityLayer;
-import com.gmail.nossr50.util.platform.PlatformManager;
-import com.google.common.io.Files;
+import java.io.*;
+import java.util.UUID;
 
 /**
  * Could be a lot better. But some tests are better than none! Tests the major things, still kinda unit-testy. Verifies
@@ -54,10 +36,7 @@ class ChunkStoreTest {
     }
 
     private World mockWorld;
-    private CompatibilityManager compatibilityManager;
-    private WorldCompatibilityLayer worldCompatibilityLayer;
-    private PlatformManager platformManager;
-    
+
     private MockedStatic<Bukkit> bukkitMock;
     private MockedStatic<mcMMO> mcMMOMock;
 
@@ -72,24 +51,10 @@ class ChunkStoreTest {
         bukkitMock = Mockito.mockStatic(Bukkit.class);
         bukkitMock.when(() -> Bukkit.getWorld(worldUUID)).thenReturn(mockWorld);
 
-        platformManager = Mockito.mock(PlatformManager.class);
-        compatibilityManager = Mockito.mock(CompatibilityManager.class);
-        worldCompatibilityLayer = Mockito.mock(WorldCompatibilityLayer.class);
-
         mcMMOMock = Mockito.mockStatic(mcMMO.class);
 
-        mcMMOMock.when(() -> mcMMO.getPlatformManager()).thenReturn(platformManager);
-        Assertions.assertNotNull(mcMMO.getPlatformManager());
-
-        mcMMOMock.when(() -> mcMMO.getCompatibilityManager()).thenReturn(compatibilityManager);
-        Assertions.assertNotNull(mcMMO.getCompatibilityManager());
-
-        Mockito.when(platformManager.getCompatibilityManager()).thenReturn(compatibilityManager);
-        Mockito.when(platformManager.getCompatibilityManager().getWorldCompatibilityLayer()).thenReturn(worldCompatibilityLayer);
-        Assertions.assertNotNull(mcMMO.getCompatibilityManager().getWorldCompatibilityLayer());
-        Mockito.when(worldCompatibilityLayer.getMinWorldHeight(mockWorld)).thenReturn(LEGACY_WORLD_HEIGHT_MIN);
-        Mockito.when(worldCompatibilityLayer.getMaxWorldHeight(mockWorld)).thenReturn(LEGACY_WORLD_HEIGHT_MAX);
-
+        Mockito.when(mockWorld.getMinHeight()).thenReturn(LEGACY_WORLD_HEIGHT_MIN);
+        Mockito.when(mockWorld.getMaxHeight()).thenReturn(LEGACY_WORLD_HEIGHT_MAX);
     }
     
     @AfterEach
@@ -100,7 +65,7 @@ class ChunkStoreTest {
 
     @Test
     void testIndexOutOfBounds() {
-        Mockito.when(mcMMO.getCompatibilityManager().getWorldCompatibilityLayer().getMinWorldHeight(mockWorld)).thenReturn(-64);
+        Mockito.when(mockWorld.getMinHeight()).thenReturn(-64);
         HashChunkManager hashChunkManager = new HashChunkManager();
 
         // Top Block
@@ -111,7 +76,7 @@ class ChunkStoreTest {
 
     @Test
     void testSetTrue() {
-        Mockito.when(mcMMO.getCompatibilityManager().getWorldCompatibilityLayer().getMinWorldHeight(mockWorld)).thenReturn(-64);
+        Mockito.when(mockWorld.getMinHeight()).thenReturn(-64);
         HashChunkManager hashChunkManager = new HashChunkManager();
         int radius = 2; // Could be anything but drastically changes test time
 
@@ -132,7 +97,7 @@ class ChunkStoreTest {
         Block bottomBlock = initMockBlock(1337, 0, -1337);
         Assertions.assertFalse(hashChunkManager.isTrue(bottomBlock));
 
-        Assertions.assertTrue(BlockUtils.isWithinWorldBounds(worldCompatibilityLayer, bottomBlock));
+        Assertions.assertTrue(BlockUtils.isWithinWorldBounds(bottomBlock));
         hashChunkManager.setTrue(bottomBlock);
         Assertions.assertTrue(hashChunkManager.isTrue(bottomBlock));
 
@@ -140,7 +105,7 @@ class ChunkStoreTest {
         Block topBlock = initMockBlock(1337, 255, -1337);
         Assertions.assertFalse(hashChunkManager.isTrue(topBlock));
 
-        Assertions.assertTrue(BlockUtils.isWithinWorldBounds(worldCompatibilityLayer, topBlock));
+        Assertions.assertTrue(BlockUtils.isWithinWorldBounds(topBlock));
         hashChunkManager.setTrue(topBlock);
         Assertions.assertTrue(hashChunkManager.isTrue(topBlock));
     }
@@ -176,7 +141,7 @@ class ChunkStoreTest {
 
     @Test
     void testNegativeWorldMin() throws IOException {
-        Mockito.when(mcMMO.getCompatibilityManager().getWorldCompatibilityLayer().getMinWorldHeight(mockWorld)).thenReturn(-64);
+        Mockito.when(mockWorld.getMinHeight()).thenReturn(-64);
 
         BitSetChunkStore original = new BitSetChunkStore(mockWorld, 1, 2);
         original.setTrue(14, -32, 12);
@@ -195,8 +160,9 @@ class ChunkStoreTest {
         original.setTrue(13, 3, 12);
         byte[] serializedBytes = serializeChunkstore(original);
 
-        Mockito.when(mcMMO.getCompatibilityManager().getWorldCompatibilityLayer().getMinWorldHeight(mockWorld)).thenReturn(-64);
+        Mockito.when(mockWorld.getMinHeight()).thenReturn(-64);
         ChunkStore deserialized = BitSetChunkStore.Serialization.readChunkStore(new DataInputStream(new ByteArrayInputStream(serializedBytes)));
+        assert deserialized != null;
         assertEqualIgnoreMinMax(original, deserialized);
     }
 
@@ -205,7 +171,7 @@ class ChunkStoreTest {
         for (int x = -96; x < 0; x++) {
             int cx = x >> 4;
             int ix = Math.abs(x) % 16;
-            System.out.print(cx + ":" + ix + "  ");
+            //System.out.print(cx + ":" + ix + "  ");
         }
     }
 
@@ -217,6 +183,7 @@ class ChunkStoreTest {
         original.setTrue(13, 89, 12);
         byte[] serializedBytes = serializeChunkstore(original);
         ChunkStore deserialized = BitSetChunkStore.Serialization.readChunkStore(new DataInputStream(new ByteArrayInputStream(serializedBytes)));
+        assert deserialized != null;
         assertEqual(original, deserialized);
     }
 
@@ -236,6 +203,7 @@ class ChunkStoreTest {
         try (DataInputStream is = region.getInputStream(original.getChunkX(), original.getChunkZ())) {
             Assertions.assertNotNull(is);
             ChunkStore deserialized = BitSetChunkStore.Serialization.readChunkStore(is);
+            assert deserialized != null;
             assertEqual(original, deserialized);
         }
         region.close();
@@ -314,7 +282,6 @@ class ChunkStoreTest {
     }
 
     public static class LegacyChunkStore implements ChunkStore, Serializable {
-
         private static final long serialVersionUID = -1L;
         transient private boolean dirty = false;
         public boolean[][][] store;

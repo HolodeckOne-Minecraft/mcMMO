@@ -10,6 +10,7 @@ import com.gmail.nossr50.runnables.player.PlayerUpdateInventoryTask;
 import com.gmail.nossr50.skills.alchemy.Alchemy;
 import com.gmail.nossr50.skills.alchemy.AlchemyPotionBrewer;
 import com.gmail.nossr50.util.ItemUtils;
+import com.gmail.nossr50.util.MetadataConstants;
 import com.gmail.nossr50.util.Permissions;
 import com.gmail.nossr50.util.player.UserManager;
 import com.gmail.nossr50.util.skills.SkillUtils;
@@ -104,8 +105,7 @@ public class InventoryListener implements Listener {
             return;
         }
 
-        if(blockState instanceof Furnace) {
-            Furnace furnace = (Furnace) blockState;
+        if(blockState instanceof Furnace furnace) {
             OfflinePlayer offlinePlayer = mcMMO.getSmeltingTracker().getFurnaceOwner(furnace);
 
             if(offlinePlayer != null) {
@@ -190,7 +190,7 @@ public class InventoryListener implements Listener {
 
         InventoryHolder holder = inventory.getHolder();
 
-        if (!(holder instanceof BrewingStand)) {
+        if (!(holder instanceof BrewingStand stand)) {
             return;
         }
 
@@ -207,7 +207,6 @@ public class InventoryListener implements Listener {
                 return;
         }
 
-        BrewingStand stand = (BrewingStand) holder;
         ItemStack clicked = event.getCurrentItem();
         ItemStack cursor = event.getCursor();
 
@@ -427,7 +426,7 @@ public class InventoryListener implements Listener {
 
         final HumanEntity whoClicked = event.getWhoClicked();
 
-        if (!whoClicked.hasMetadata(mcMMO.playerDataKey)) {
+        if (!whoClicked.hasMetadata(MetadataConstants.METADATA_KEY_PLAYER_DATA)) {
             return;
         }
 

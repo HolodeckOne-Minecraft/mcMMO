@@ -88,10 +88,8 @@ public class HerbalismManager extends SkillManager {
                 mmoPlayer.getPlayer().sendMessage("Processing sweet berry bush rewards");
             }
             //Check the age
-            if(blockState.getBlockData() instanceof Ageable) {
+            if(blockState.getBlockData() instanceof Ageable ageable) {
                 int rewardByAge = 0;
-
-                Ageable ageable = (Ageable) blockState.getBlockData();
 
                 if(ageable.getAge() == 2) {
                     rewardByAge = 1; //Normal XP
@@ -134,8 +132,7 @@ public class HerbalismManager extends SkillManager {
             BlockState blockState = block.getState();
 
             if(blockState.getType().toString().equalsIgnoreCase("sweet_berry_bush")) {
-                if(blockState.getBlockData() instanceof Ageable) {
-                    Ageable ageable = (Ageable) blockState.getBlockData();
+                if(blockState.getBlockData() instanceof Ageable ageable) {
 
                     if(ageable.getAge() <= 1) {
                         applyXpGain(xpReward, XPGainReason.PVE, XPGainSource.SELF);
@@ -209,18 +206,21 @@ public class HerbalismManager extends SkillManager {
     public void processHerbalismBlockBreakEvent(BlockBreakEvent blockBreakEvent) {
         Player player = getPlayer();
 
+        Block block = blockBreakEvent.getBlock();
+
         if (mcMMO.p.getGeneralConfig().getHerbalismPreventAFK() && player.isInsideVehicle()) {
+            if(block.hasMetadata(MetadataConstants.METADATA_KEY_REPLANT)) {
+                block.removeMetadata(MetadataConstants.METADATA_KEY_REPLANT, mcMMO.p);
+            }
             return;
         }
 
         //Check if the plant was recently replanted
-        if(blockBreakEvent.getBlock().getBlockData() instanceof Ageable) {
-            Ageable ageableCrop = (Ageable) blockBreakEvent.getBlock().getBlockData();
-
-            if(blockBreakEvent.getBlock().getMetadata(mcMMO.REPLANT_META_KEY).size() >= 1) {
-                if(blockBreakEvent.getBlock().getMetadata(mcMMO.REPLANT_META_KEY).get(0).asBoolean()) {
+        if(block.getBlockData() instanceof Ageable ageableCrop) {
+            if(block.getMetadata(MetadataConstants.METADATA_KEY_REPLANT).size() >= 1) {
+                if(block.getMetadata(MetadataConstants.METADATA_KEY_REPLANT).get(0).asBoolean()) {
                     if(isAgeableMature(ageableCrop)) {
-                        blockBreakEvent.getBlock().removeMetadata(mcMMO.REPLANT_META_KEY, mcMMO.p);
+                        block.removeMetadata(MetadataConstants.METADATA_KEY_REPLANT, mcMMO.p);
                     } else {
                         //Crop is recently replanted to back out of destroying it
                         blockBreakEvent.setCancelled(true);
@@ -251,6 +251,9 @@ public class HerbalismManager extends SkillManager {
      * @param brokenPlants plant blocks to process
      */
     private void processHerbalismOnBlocksBroken(BlockBreakEvent blockBreakEvent, HashSet<Block> brokenPlants) {
+        if(blockBreakEvent.isCancelled())
+            return;
+
         BlockState originalBreak = blockBreakEvent.getBlock().getState();
         boolean greenThumbActivated = false;
 
@@ -259,16 +262,6 @@ public class HerbalismManager extends SkillManager {
             if(mcMMO.p.getGeneralConfig().isGreenThumbReplantableCrop(originalBreak.getType())) {
                 if(!getPlayer().isSneaking()) {
                     greenThumbActivated = processGreenThumbPlants(originalBreak, blockBreakEvent, isGreenTerraActive());
-                }
-            }
-        }
-
-        //When replanting a immature crop we cancel the block break event and back out
-        if(greenThumbActivated) {
-            if(originalBreak.getBlock().getBlockData() instanceof Ageable) {
-                Ageable ageableCrop = (Ageable) originalBreak.getBlock().getBlockData();
-                if(!isAgeableMature(ageableCrop)) {
-                    return;
                 }
             }
         }
@@ -321,7 +314,7 @@ public class HerbalismManager extends SkillManager {
             DelayedHerbalismXPCheckTask delayedHerbalismXPCheckTask = new DelayedHerbalismXPCheckTask(mmoPlayer, delayedChorusBlocks);
 
             //Large delay because the tree takes a while to break
-            delayedHerbalismXPCheckTask.runTaskLater(mcMMO.p, 20); //Calculate Chorus XP + Bonus Drops 1 tick later
+            delayedHerbalismXPCheckTask.runTaskLater(mcMMO.p, 0); //Calculate Chorus XP + Bonus Drops 1 tick later
         }
     }
 
@@ -355,8 +348,7 @@ public class HerbalismManager extends SkillManager {
                  */
 
                 //Not all things that are natural should give double drops, make sure its fully mature as well
-                if(plantData instanceof Ageable) {
-                    Ageable ageable = (Ageable) plantData;
+                if(plantData instanceof Ageable ageable) {
 
                     if(isAgeableMature(ageable) || isBizarreAgeable(plantData)) {
                         if(checkDoubleDrop(brokenPlantState)) {
@@ -394,6 +386,7 @@ public class HerbalismManager extends SkillManager {
             //Catcus and Sugar Canes cannot be trusted
             switch(blockData.getMaterial()) {
                 case CACTUS:
+                case KELP:
                 case SUGAR_CANE:
                     return true;
                 default:
@@ -450,8 +443,7 @@ public class HerbalismManager extends SkillManager {
                  */
 
                 //Calculate XP
-                if(plantData instanceof Ageable) {
-                    Ageable plantAgeable = (Ageable) plantData;
+                if(plantData instanceof Ageable plantAgeable) {
 
                     if(isAgeableMature(plantAgeable) || isBizarreAgeable(plantData)) {
                         xpToReward += ExperienceConfig.getInstance().getXp(PrimarySkillType.HERBALISM, brokenBlockNewState.getType());
@@ -494,8 +486,8 @@ public class HerbalismManager extends SkillManager {
             BlockState brokenBlockNewState = blockSnapshot.getBlockRef().getState();
 
             //Remove metadata from the snapshot of blocks
-            if(brokenBlockNewState.hasMetadata(mcMMO.BONUS_DROPS_METAKEY)) {
-                brokenBlockNewState.removeMetadata(mcMMO.BONUS_DROPS_METAKEY, mcMMO.p);
+            if(brokenBlockNewState.hasMetadata(MetadataConstants.METADATA_KEY_BONUS_DROPS)) {
+                brokenBlockNewState.removeMetadata(MetadataConstants.METADATA_KEY_BONUS_DROPS, mcMMO.p);
             }
 
             //If the block is not AIR that means it wasn't broken
@@ -530,21 +522,18 @@ public class HerbalismManager extends SkillManager {
      * @param blockBreakEvent target event
      * @return a set of plant-blocks that were broken as a result of this event
      */
-    private HashSet<Block> getBrokenHerbalismBlocks(BlockBreakEvent blockBreakEvent) {
+    private HashSet<Block> getBrokenHerbalismBlocks(@NotNull BlockBreakEvent blockBreakEvent) {
         //Get an updated capture of this block
-        BlockState originalBlockBlockState = blockBreakEvent.getBlock().getState();
-        Material originalBlockMaterial = originalBlockBlockState.getType();
+        BlockState originBlockState = blockBreakEvent.getBlock().getState();
+        Material originBlockMaterial = originBlockState.getType();
         HashSet<Block> blocksBroken = new HashSet<>(); //Blocks broken
 
-        //Check if this block is a one block plant or not
-        boolean oneBlockPlant = isOneBlockPlant(originalBlockMaterial);
+        //Add the initial block
+        blocksBroken.add(originBlockState.getBlock());
 
-        if(oneBlockPlant) {
-            //If the block is a one-block plant return only that
-            blocksBroken.add(originalBlockBlockState.getBlock());
-        } else {
+        if(!isOneBlockPlant(originBlockMaterial)) {
             //If the block is a multi-block structure, capture a set of all blocks broken and return that
-            blocksBroken = getBrokenBlocksMultiBlockPlants(originalBlockBlockState, blockBreakEvent);
+            blocksBroken = getBrokenBlocksMultiBlockPlants(originBlockState);
         }
 
         //Return all broken plant-blocks
@@ -580,17 +569,16 @@ public class HerbalismManager extends SkillManager {
      * The method to grab these blocks is a bit hacky and does not hook into the API
      * Basically we expect the blocks to be broken if this event is not cancelled and we determine which block are broken on our end rather than any event state captures
      *
-     * @param blockBreakEvent target event
      * @return a set of plant-blocks broken from this event
      */
-    protected HashSet<Block> getBrokenBlocksMultiBlockPlants(BlockState originalBlockBroken, BlockBreakEvent blockBreakEvent) {
+    protected HashSet<Block> getBrokenBlocksMultiBlockPlants(BlockState brokenBlock) {
         //Track the broken blocks
         HashSet<Block> brokenBlocks;
 
-        if (isChorusBranch(originalBlockBroken.getType())) {
-            brokenBlocks = getBrokenChorusBlocks(originalBlockBroken);
+        if (isChorusBranch(brokenBlock.getType())) {
+            brokenBlocks = getBrokenChorusBlocks(brokenBlock);
         } else {
-            brokenBlocks = getBlocksBrokenAbove(originalBlockBroken);
+            brokenBlocks = getBlocksBrokenAboveOrBelow(brokenBlock, false, mcMMO.getMaterialMapStore().isMultiBlockHangingPlant(brokenBlock.getType()));
         }
 
         return brokenBlocks;
@@ -610,29 +598,34 @@ public class HerbalismManager extends SkillManager {
      * The vertical search returns early if it runs into anything that is not a multi-block plant
      * Multi-block plants are hard-coded and kept in {@link MaterialMapStore}
      *
-     * @param breakPointBlockState The point of the "break"
+     * @param originBlock The point of the "break"
+     * @param inclusive Whether to include the origin block
+     * @param below Whether to search down instead of up.
      * @return A set of blocks above the target block which can be assumed to be broken
      */
-    private HashSet<Block> getBlocksBrokenAbove(BlockState breakPointBlockState) {
+    private HashSet<Block> getBlocksBrokenAboveOrBelow(BlockState originBlock, boolean inclusive, boolean below) {
         HashSet<Block> brokenBlocks = new HashSet<>();
-        Block block = breakPointBlockState.getBlock();
+        Block block = originBlock.getBlock();
 
         //Add the initial block to the set
-        brokenBlocks.add(block);
+        if(inclusive)
+            brokenBlocks.add(block);
 
         //Limit our search
-        int maxHeight = 255;
+        int maxHeight = 512;
+
+        final BlockFace relativeFace = below ? BlockFace.DOWN : BlockFace.UP;
 
         // Search vertically for multi-block plants, exit early if any non-multi block plants
-        for (int y = 1; y < maxHeight; y++) {
+        for (int y = 0; y < maxHeight; y++) {
             //TODO: Should this grab state? It would be more expensive..
-            Block relativeUpBlock = block.getRelative(BlockFace.UP, y);
+            Block relativeBlock = block.getRelative(relativeFace, y);
 
             //Abandon our search if the block isn't multi
-            if(!mcMMO.getMaterialMapStore().isMultiBlockPlant(relativeUpBlock.getType()))
+            if (isOneBlockPlant(relativeBlock.getType()))
                 break;
 
-            brokenBlocks.add(relativeUpBlock);
+            brokenBlocks.add(relativeBlock);
         }
 
         return brokenBlocks;
@@ -645,7 +638,7 @@ public class HerbalismManager extends SkillManager {
      * @return true if the block is not contained in the collection of multi-block plants
      */
     private boolean isOneBlockPlant(Material material) {
-        return !mcMMO.getMaterialMapStore().isMultiBlockPlant(material);
+        return !mcMMO.getMaterialMapStore().isMultiBlockPlant(material) && !mcMMO.getMaterialMapStore().isMultiBlockHangingPlant(material);
     }
 
     /**
@@ -753,7 +746,7 @@ public class HerbalismManager extends SkillManager {
     private void startReplantTask(int desiredCropAge, BlockBreakEvent blockBreakEvent, BlockState cropState, boolean isImmature) {
         //Mark the plant as recently replanted to avoid accidental breakage
         new DelayedCropReplant(blockBreakEvent, cropState, desiredCropAge, isImmature).runTaskLater(mcMMO.p, 20 * 2);
-        blockBreakEvent.getBlock().setMetadata(mcMMO.REPLANT_META_KEY, new RecentlyReplantedCropMeta(mcMMO.p, true));
+        blockBreakEvent.getBlock().setMetadata(MetadataConstants.METADATA_KEY_REPLANT, new RecentlyReplantedCropMeta(mcMMO.p, true));
     }
 
     /**
@@ -770,11 +763,9 @@ public class HerbalismManager extends SkillManager {
 
         BlockData blockData = blockState.getBlockData();
 
-        if (!(blockData instanceof Ageable)) {
+        if (!(blockData instanceof Ageable ageable)) {
             return false;
         }
-
-        Ageable ageable = (Ageable) blockData;
 
         //If the ageable is NOT mature and the player is NOT using a hoe, abort
 

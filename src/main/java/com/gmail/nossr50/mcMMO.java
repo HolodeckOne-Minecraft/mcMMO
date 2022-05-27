@@ -18,6 +18,7 @@ import com.gmail.nossr50.database.DatabaseManagerFactory;
 import com.gmail.nossr50.datatypes.skills.PrimarySkillType;
 import com.gmail.nossr50.datatypes.skills.subskills.acrobatics.Roll;
 import com.gmail.nossr50.listeners.*;
+import com.gmail.nossr50.metadata.MetadataService;
 import com.gmail.nossr50.party.PartyManager;
 import com.gmail.nossr50.runnables.SaveTimerTask;
 import com.gmail.nossr50.runnables.backups.CleanBackupsTask;
@@ -75,8 +76,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class mcMMO extends JavaPlugin {
-    /* Managers */
+
+
+    /* Managers & Services */
     private static PlatformManager platformManager;
+    private static MetadataService metadataService;
     private static ChunkManager       placeStore;
     private static RepairableManager  repairableManager;
     private static SalvageableManager salvageableManager;
@@ -129,29 +133,6 @@ public class mcMMO extends JavaPlugin {
 
     private static boolean isRetroModeEnabled;
 
-    /* Metadata Values */
-    public static final String REPLANT_META_KEY      = "mcMMO: Recently Replanted";
-    public static final String EXPLOSION_FROM_RUPTURE = "mcMMO: Rupture Explosion";
-    public static final String RUPTURE_META_KEY      = "mcMMO: RuptureTask";
-    public static final String FISH_HOOK_REF_METAKEY = "mcMMO: Fish Hook Tracker";
-    public static final String DODGE_TRACKER         = "mcMMO: Dodge Tracker";
-    public static final String CUSTOM_DAMAGE_METAKEY = "mcMMO: Custom Damage";
-    public static final String travelingBlock        = "mcMMO: Traveling Block";
-    public static final String blockMetadataKey      = "mcMMO: Piston Tracking";
-    public static final String tntMetadataKey        = "mcMMO: Tracked TNT";
-    public static final String customNameKey         = "mcMMO: Custom Name";
-    public static final String customVisibleKey      = "mcMMO: Name Visibility";
-    public static final String droppedItemKey        = "mcMMO: Tracked Item";
-    public static final String infiniteArrowKey      = "mcMMO: Infinite Arrow";
-    public static final String trackedArrow          = "mcMMO: Tracked Arrow";
-    public static final String bowForceKey           = "mcMMO: Bow Force";
-    public static final String arrowDistanceKey      = "mcMMO: Arrow Distance";
-    public static final String BONUS_DROPS_METAKEY   = "mcMMO: Double Drops";
-    public static final String disarmedItemKey       = "mcMMO: Disarmed Item";
-    public static final String playerDataKey         = "mcMMO: Player Data";
-    public static final String databaseCommandKey    = "mcMMO: Processing Database Command";
-
-    public static FixedMetadataValue metadataValue;
     private long purgeTime = 2630000000L;
 
     private GeneralConfig generalConfig;
@@ -196,10 +177,13 @@ public class mcMMO extends JavaPlugin {
             //Platform Manager
             platformManager = new PlatformManager();
 
+            //metadata service
+            metadataService = new MetadataService(this);
+
             //Filter out any debug messages (if debug/verbose logging is not enabled)
             getLogger().setFilter(new LogFilter(this));
 
-            metadataValue = new FixedMetadataValue(this, true);
+            MetadataConstants.MCMMO_METADATA_VALUE = new FixedMetadataValue(this, true);
 
             PluginManager pluginManager = getServer().getPluginManager();
             healthBarPluginEnabled = pluginManager.getPlugin("HealthBar") != null;
@@ -397,15 +381,10 @@ public class mcMMO extends JavaPlugin {
             // Remove other tasks BEFORE starting the Backup, or we just cancel it straight away.
             try {
                 ZipLibrary.mcMMOBackup();
-            }
-            catch (IOException e) {
-                getLogger().severe(e.toString());
-            }
-            catch(NoClassDefFoundError e) {
+            } catch(NoClassDefFoundError e) {
                 getLogger().severe("Backup class not found!");
                 getLogger().info("Please do not replace the mcMMO jar while the server is running."); 
-            }
-            catch (Throwable e) {
+            } catch (Throwable e) {
                 getLogger().severe(e.toString());
             }
         }
@@ -485,6 +464,10 @@ public class mcMMO extends JavaPlugin {
 
     public static @Nullable CompatibilityManager getCompatibilityManager() {
         return platformManager.getCompatibilityManager();
+    }
+
+    public static MetadataService getMetadataService() {
+        return metadataService;
     }
 
     @Deprecated
@@ -599,7 +582,7 @@ public class mcMMO extends JavaPlugin {
 
         // Load salvage configs, make manager and register them at this time
         SalvageConfigManager sManager = new SalvageConfigManager(this);
-        List<Salvageable> salvageables = new ArrayList<>(sManager.getLoadedSalvageables());
+        List<Salvageable> salvageables = sManager.getLoadedSalvageables();
         salvageableManager = new SimpleSalvageableManager(salvageables.size());
         salvageableManager.registerSalvageables(salvageables);
     }

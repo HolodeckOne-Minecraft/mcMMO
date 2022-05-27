@@ -7,7 +7,6 @@ import com.gmail.nossr50.mcMMO;
 import com.gmail.nossr50.util.EventUtils;
 import com.gmail.nossr50.util.Misc;
 import com.gmail.nossr50.util.player.NotificationManager;
-import com.gmail.nossr50.util.skills.ParticleEffectUtils;
 import com.gmail.nossr50.util.skills.PerksUtils;
 import com.gmail.nossr50.util.skills.SkillUtils;
 import org.bukkit.Chunk;
@@ -64,7 +63,7 @@ public class AbilityDisableTask extends BukkitRunnable {
             SkillUtils.sendSkillMessage(player, NotificationType.SUPER_ABILITY_ALERT_OTHERS, ability.getAbilityPlayerOff());
         }
         if(!mcMMO.isServerShutdownExecuted()) {
-            new AbilityCooldownTask(mcMMOPlayer, ability).runTaskLater(mcMMO.p, PerksUtils.handleCooldownPerks(player, ability.getCooldown()) * Misc.TICK_CONVERSION_FACTOR);
+            new AbilityCooldownTask(mcMMOPlayer, ability).runTaskLater(mcMMO.p, (long) PerksUtils.handleCooldownPerks(player, ability.getCooldown()) * Misc.TICK_CONVERSION_FACTOR);
         }
     }
 

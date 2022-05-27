@@ -1,8 +1,6 @@
 package com.gmail.nossr50.util.platform;
 
-import java.util.logging.Logger;
-import java.util.stream.Stream;
-
+import com.gmail.nossr50.mcMMO;
 import org.bukkit.Bukkit;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.Test;
@@ -12,7 +10,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import com.gmail.nossr50.mcMMO;
+import java.util.logging.Logger;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -92,8 +91,8 @@ class MinecraftGameVersionTest {
 
         try (MockedStatic<Bukkit> bukkit = Mockito.mockStatic(Bukkit.class)) {
             // Inject our own Bukkit versions
-            bukkit.when(() -> Bukkit.getVersion()).thenReturn(serverSoftwareVersion);
-            bukkit.when(() -> Bukkit.getBukkitVersion()).thenReturn(gameVersion);
+            bukkit.when(Bukkit::getVersion).thenReturn(serverSoftwareVersion);
+            bukkit.when(Bukkit::getBukkitVersion).thenReturn(gameVersion);
 
             PlatformManager manager = new PlatformManager();
             Platform platform = manager.getPlatform();

@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 public final class FlatFileDatabaseManager implements DatabaseManager {
     public static final String IGNORED = "IGNORED";
     public static final String LEGACY_INVALID_OLD_USERNAME = "_INVALID_OLD_USERNAME_'";
-    private final @NotNull EnumMap<PrimarySkillType, List<PlayerStat>> playerStatHash = new EnumMap<PrimarySkillType, List<PlayerStat>>(PrimarySkillType.class);
+    private final @NotNull EnumMap<PrimarySkillType, List<PlayerStat>> playerStatHash = new EnumMap<>(PrimarySkillType.class);
     private final @NotNull List<PlayerStat> powerLevels = new ArrayList<>();
     private long lastUpdate = 0;
     private final @NotNull String usersFilePath;
@@ -120,7 +120,6 @@ public final class FlatFileDatabaseManager implements DatabaseManager {
         BufferedReader in = null;
         FileWriter out = null;
 
-        // This code is O(n) instead of O(n²)
         synchronized (fileWritingLock) {
             try {
                 in = new BufferedReader(new FileReader(usersFilePath));
