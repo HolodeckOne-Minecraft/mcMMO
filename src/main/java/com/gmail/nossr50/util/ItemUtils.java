@@ -413,37 +413,38 @@ public final class ItemUtils {
      */
     public static boolean isHerbalismDrop(ItemStack item) {
         //TODO: 1.14 This needs to be updated
-        switch (item.getType()) {
-            case WHEAT:
-            case WHEAT_SEEDS:
-            case CARROT:
-            case CHORUS_FRUIT:
-            case CHORUS_FLOWER:
-            case POTATO:
-            case BEETROOT:
-            case BEETROOTS:
-            case BEETROOT_SEEDS:
-            case NETHER_WART:
-            case BROWN_MUSHROOM:
-            case RED_MUSHROOM:
-            case ROSE_BUSH:
-            case DANDELION:
-            case CACTUS:
-            case SUGAR_CANE:
-            case MELON:
-            case MELON_SEEDS:
-            case PUMPKIN:
-            case PUMPKIN_SEEDS:
-            case LILY_PAD:
-            case VINE:
-            case TALL_GRASS:
-            case COCOA_BEANS:
+        switch (item.getType().getKey().getKey().toLowerCase()) {
+            case "wheat":
+            case "wheat_seeds":
+            case "carrot":
+            case "chorus_fruit":
+            case "chorus_flower":
+            case "potato":
+            case "beetroot":
+            case "beetroots":
+            case "beetroot_seeds":
+            case "nether_wart":
+            case "brown_mushroom":
+            case "red_mushroom":
+            case "rose_bush":
+            case "dandelion":
+            case "cactus":
+            case "sugar_cane":
+            case "melon":
+            case "melon_seeds":
+            case "pumpkin":
+            case "pumpkin_seeds":
+            case "lily_pad":
+            case "vine":
+            case "tall_grass":
+            case "cocoa_beans":
                 return true;
 
             default:
                 return false;
         }
     }
+
 
     /**
      * Checks to see if an item is a mob drop.
@@ -510,32 +511,34 @@ public final class ItemUtils {
      * @return true if the item is a woodcutting drop, false otherwise
      */
     public static boolean isWoodcuttingDrop(ItemStack item) {
-        switch (item.getType()) {
-            case ACACIA_LOG:
-            case BIRCH_LOG:
-            case DARK_OAK_LOG:
-            case JUNGLE_LOG:
-            case OAK_LOG:
-            case SPRUCE_LOG:
-            case STRIPPED_ACACIA_LOG:
-            case STRIPPED_BIRCH_LOG:
-            case STRIPPED_DARK_OAK_LOG:
-            case STRIPPED_JUNGLE_LOG:
-            case STRIPPED_OAK_LOG:
-            case STRIPPED_SPRUCE_LOG:
-            case ACACIA_SAPLING:
-            case SPRUCE_SAPLING:
-            case BIRCH_SAPLING:
-            case DARK_OAK_SAPLING:
-            case JUNGLE_SAPLING:
-            case OAK_SAPLING:
-            case ACACIA_LEAVES:
-            case BIRCH_LEAVES:
-            case DARK_OAK_LEAVES:
-            case JUNGLE_LEAVES:
-            case OAK_LEAVES:
-            case SPRUCE_LEAVES:
-            case APPLE:
+        switch (item.getType().toString()) {
+            case "ACACIA_LOG":
+            case "BIRCH_LOG":
+            case "DARK_OAK_LOG":
+            case "JUNGLE_LOG":
+            case "OAK_LOG":
+            case "SPRUCE_LOG":
+            case "STRIPPED_ACACIA_LOG":
+            case "STRIPPED_BIRCH_LOG":
+            case "STRIPPED_DARK_OAK_LOG":
+            case "STRIPPED_JUNGLE_LOG":
+            case "STRIPPED_OAK_LOG":
+            case "STRIPPED_SPRUCE_LOG":
+            case "STRIPPED_MANGROVE_LOG":
+            case "ACACIA_SAPLING":
+            case "SPRUCE_SAPLING":
+            case "BIRCH_SAPLING":
+            case "DARK_OAK_SAPLING":
+            case "JUNGLE_SAPLING":
+            case "OAK_SAPLING":
+            case "ACACIA_LEAVES":
+            case "BIRCH_LEAVES":
+            case "DARK_OAK_LEAVES":
+            case "JUNGLE_LEAVES":
+            case "OAK_LEAVES":
+            case "SPRUCE_LEAVES":
+            case "BEE_NEST":
+            case "APPLE":
                 return true;
 
             default:

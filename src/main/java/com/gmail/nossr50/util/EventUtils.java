@@ -224,12 +224,12 @@ public final class EventUtils {
         return event;
     }
 
-    public static FakePlayerAnimationEvent callFakeArmSwingEvent(Player player) {
-        FakePlayerAnimationEvent event = new FakePlayerAnimationEvent(player);
-        mcMMO.p.getServer().getPluginManager().callEvent(event);
-
-        return event;
-    }
+//    public static Event callFakeArmSwingEvent(@NotNull Player player) {
+//        PlayerAnimationEvent event = new FakePlayerAnimationEvent(player, PlayerAnimationType.ARM_SWING);
+//        mcMMO.p.getServer().getPluginManager().callEvent(event);
+//
+//        return event;
+//    }
 
     public static boolean tryLevelChangeEvent(Player player, PrimarySkillType skill, int levelsChanged, float xpRemoved, boolean isLevelUp, XPGainReason xpGainReason) {
         McMMOPlayerLevelChangeEvent event = isLevelUp ? new McMMOPlayerLevelUpEvent(player, skill, levelsChanged, xpGainReason) : new McMMOPlayerLevelDownEvent(player, skill, levelsChanged, xpGainReason);
@@ -314,9 +314,9 @@ public final class EventUtils {
         PluginManager pluginManager = mcMMO.p.getServer().getPluginManager();
 
         // Support for NoCheat
-        if (shouldArmSwing) {
-            callFakeArmSwingEvent(player);
-        }
+        //if (shouldArmSwing) {
+        //    callFakeArmSwingEvent(player);
+        //}
 
         FakeBlockDamageEvent damageEvent = new FakeBlockDamageEvent(player, block, player.getInventory().getItemInMainHand(), true);
         pluginManager.callEvent(damageEvent);

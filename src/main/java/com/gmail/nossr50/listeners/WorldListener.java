@@ -2,6 +2,7 @@ package com.gmail.nossr50.listeners;
 
 import com.gmail.nossr50.config.WorldBlacklist;
 import com.gmail.nossr50.mcMMO;
+import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.block.BlockState;
 import org.bukkit.event.EventHandler;
@@ -29,9 +30,11 @@ public class WorldListener implements Listener {
         if(WorldBlacklist.isWorldBlacklisted(event.getWorld()))
             return;
 
-        for (BlockState blockState : event.getBlocks()) {
-            mcMMO.getPlaceStore().setFalse(blockState);
-        }
+        Bukkit.getScheduler().scheduleSyncDelayedTask(mcMMO.p, () -> {
+            for (BlockState blockState : event.getBlocks()) {
+                mcMMO.getPlaceStore().setFalse(blockState);
+            }
+        }, 1);
     }
 
     /**
