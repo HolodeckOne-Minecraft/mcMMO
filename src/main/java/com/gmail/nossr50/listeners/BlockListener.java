@@ -38,7 +38,6 @@ import org.bukkit.event.block.*;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.HashSet;
-import java.util.Locale;
 
 public class BlockListener implements Listener {
     private final mcMMO plugin;
@@ -141,7 +140,7 @@ public class BlockListener implements Listener {
             movedBlock = block.getRelative(direction);
 
             if(BlockUtils.isWithinWorldBounds(movedBlock)) {
-                mcMMO.getPlaceStore().setTrue(movedBlock);
+                BlockUtils.setUnnaturalBlock(block);
             }
         }
     }
@@ -167,12 +166,13 @@ public class BlockListener implements Listener {
 
         //Spigot makes bad things happen in its API
         if(BlockUtils.isWithinWorldBounds(movedBlock)) {
-            mcMMO.getPlaceStore().setTrue(movedBlock);
+            BlockUtils.setUnnaturalBlock(movedBlock);
         }
 
         for (Block block : event.getBlocks()) {
-            if(BlockUtils.isWithinWorldBounds(block)) {
-                mcMMO.getPlaceStore().setTrue(block.getRelative(direction));
+            if(BlockUtils.isWithinWorldBounds(block) && BlockUtils.isWithinWorldBounds(block.getRelative(direction))) {
+                Block relativeBlock = block.getRelative(direction);
+                BlockUtils.setUnnaturalBlock(relativeBlock);
             }
         }
     }
@@ -190,14 +190,13 @@ public class BlockListener implements Listener {
         if(WorldBlacklist.isWorldBlacklisted(event.getBlock().getWorld()))
             return;
 
-
         BlockState blockState = event.getNewState();
 
         if(ExperienceConfig.getInstance().isSnowExploitPrevented() && BlockUtils.shouldBeWatched(blockState)) {
             Block block = blockState.getBlock();
 
             if(BlockUtils.isWithinWorldBounds(block)) {
-                mcMMO.getPlaceStore().setTrue(block);
+                BlockUtils.setUnnaturalBlock(block);
             }
         }
     }
@@ -218,8 +217,9 @@ public class BlockListener implements Listener {
             BlockState newState = event.getNewState();
 
             if(newState.getType() != Material.OBSIDIAN && ExperienceConfig.getInstance().doesBlockGiveSkillXP(PrimarySkillType.MINING, newState.getBlockData())) {
-                if(BlockUtils.isWithinWorldBounds(newState.getBlock())) {
-                    mcMMO.getPlaceStore().setTrue(newState);
+                Block block = newState.getBlock();
+                if(BlockUtils.isWithinWorldBounds(block)) {
+                    BlockUtils.setUnnaturalBlock(block);
                 }
             }
         }
@@ -246,7 +246,7 @@ public class BlockListener implements Listener {
         if(BlockUtils.isWithinWorldBounds(block)) {
             //NOTE: BlockMultiPlace has its own logic so don't handle anything that would overlap
             if (!(event instanceof BlockMultiPlaceEvent)) {
-                mcMMO.getPlaceStore().setTrue(blockState);
+                BlockUtils.setUnnaturalBlock(block);
             }
         }
 
@@ -290,8 +290,8 @@ public class BlockListener implements Listener {
                 }
 
                 //Track unnatural blocks
-                for(BlockState replacedStates : event.getReplacedBlockStates()) {
-                    mcMMO.getPlaceStore().setTrue(replacedStates);
+                for(BlockState replacedState : event.getReplacedBlockStates()) {
+                    BlockUtils.setUnnaturalBlock(replacedState.getBlock());
                 }
             }
         }
@@ -559,7 +559,7 @@ public class BlockListener implements Listener {
                 mcMMOPlayer.checkAbilityActivation(PrimarySkillType.UNARMED);
 
                 if(mcMMOPlayer.getAbilityMode(SuperAbilityType.BERSERK)) {
-                    if (SuperAbilityType.BERSERK.blockCheck(blockState) && EventUtils.simulateBlockBreak(blockState.getBlock(), player, true)) {
+                    if (SuperAbilityType.BERSERK.blockCheck(blockState) && EventUtils.simulateBlockBreak(blockState.getBlock(), player)) {
                         event.setInstaBreak(true);
 
                         if(blockState.getType().getKey().getKey().contains("glass")) {
@@ -634,11 +634,11 @@ public class BlockListener implements Listener {
         }
         else if (mcMMOPlayer.getAbilityMode(SuperAbilityType.BERSERK) && (heldItem.getType() == Material.AIR || mcMMO.p.getGeneralConfig().getUnarmedItemsAsUnarmed())) {
             if (mcMMOPlayer.getUnarmedManager().canUseBlockCracker() && BlockUtils.affectedByBlockCracker(blockState)) {
-                if (EventUtils.simulateBlockBreak(block, player, true) && mcMMOPlayer.getUnarmedManager().blockCrackerCheck(blockState)) {
+                if (EventUtils.simulateBlockBreak(block, player) && mcMMOPlayer.getUnarmedManager().blockCrackerCheck(blockState)) {
                     blockState.update();
                 }
             }
-            else if (!event.getInstaBreak() && SuperAbilityType.BERSERK.blockCheck(blockState) && EventUtils.simulateBlockBreak(block, player, true)) {
+            else if (!event.getInstaBreak() && SuperAbilityType.BERSERK.blockCheck(blockState) && EventUtils.simulateBlockBreak(block, player)) {
                 event.setInstaBreak(true);
 
                 if(blockState.getType().getKey().getKey().contains("glass")) {
@@ -648,7 +648,7 @@ public class BlockListener implements Listener {
                 }
             }
         }
-        else if (mcMMOPlayer.getWoodcuttingManager().canUseLeafBlower(heldItem) && BlockUtils.isNonWoodPartOfTree(blockState) && EventUtils.simulateBlockBreak(block, player, true)) {
+        else if (mcMMOPlayer.getWoodcuttingManager().canUseLeafBlower(heldItem) && BlockUtils.isNonWoodPartOfTree(blockState) && EventUtils.simulateBlockBreak(block, player)) {
             event.setInstaBreak(true);
             SoundManager.sendSound(player, block.getLocation(), SoundType.POP);
         }

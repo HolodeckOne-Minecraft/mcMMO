@@ -450,6 +450,9 @@ public class PlayerListener implements Listener {
             case CAUGHT_FISH:
                 if(caught instanceof Item) {
                     if(ExperienceConfig.getInstance().isFishingExploitingPrevented()) {
+
+                        fishingManager.processExploiting(event.getHook().getLocation().toVector());
+
                         if (fishingManager.isExploitingFishing(event.getHook().getLocation().toVector())) {
                             player.sendMessage(LocaleLoader.getString("Fishing.ScarcityTip", ExperienceConfig.getInstance().getFishingExploitingOptionMoveRange()));
                             event.setExpToDrop(0);
@@ -863,7 +866,7 @@ public class PlayerListener implements Listener {
                             // Bukkit.getPluginManager().callEvent(fakeSwing);
                             player.getInventory().getItemInMainHand().setAmount(heldItem.getAmount() - 1);
                             player.updateInventory();
-                            if (herbalismManager.processGreenThumbBlocks(blockState) && EventUtils.simulateBlockBreak(block, player, false)) {
+                            if (herbalismManager.processGreenThumbBlocks(blockState) && EventUtils.simulateBlockBreak(block, player)) {
                                 blockState.update(true);
                             }
                         }
@@ -874,7 +877,7 @@ public class PlayerListener implements Listener {
                             // Bukkit.getPluginManager().callEvent(fakeSwing);
                             event.setCancelled(true);
                             if (herbalismManager.processShroomThumb(blockState)
-                                    && EventUtils.simulateBlockBreak(block, player, false)) {
+                                    && EventUtils.simulateBlockBreak(block, player)) {
                                 blockState.update(true);
                             }
                         }
